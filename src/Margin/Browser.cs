@@ -17,6 +17,8 @@ using WebBrowser = System.Windows.Controls.WebBrowser;
 
 namespace MarkdownEditor
 {
+    using SpecFirst.MarkdownParser;
+
     public class Browser : IDisposable
     {
         private string _file;
@@ -222,19 +224,11 @@ namespace MarkdownEditor
             {
                 // Generate the HTML document
                 string html = null;
-                StringWriter htmlWriter = null;
                 try
                 {
                     _currentDocument = snapshot.ParseToMarkdown();
 
-                    htmlWriter = htmlWriterStatic ?? (htmlWriterStatic = new StringWriter());
-                    htmlWriter.GetStringBuilder().Clear();
-                    var htmlRenderer = new HtmlRenderer(htmlWriter);
-                    MarkdownFactory.Pipeline.Setup(htmlRenderer);
-                    htmlRenderer.UseNonAsciiNoEscape = true;
-                    htmlRenderer.Render(_currentDocument);
-                    htmlWriter.Flush();
-                    html = htmlWriter.ToString();
+                    html = MarkdownItParser.ParseMarkdownToHtml(snapshot.GetText());
                 }
                 catch (Exception ex)
                 {
@@ -242,11 +236,6 @@ namespace MarkdownEditor
                     // Though, it's easier to output it directly to the browser
                     html = "<p>An unexpected exception occurred:</p><pre>" +
                            ex.ToString().Replace("<", "&lt;").Replace("&", "&amp;") + "</pre>";
-                }
-                finally
-                {
-                    // Free any resources allocated by HtmlWriter
-                    htmlWriter?.GetStringBuilder().Clear();
                 }
 
                 IHTMLElement content = null;
